@@ -1,0 +1,264 @@
+<!--
+91 Club — Colour Prediction Game (single-file HTML)
+Instructions:
+1. Save this file as `91-club-colour-prediction.html` and open it in any modern browser (mobile-friendly).
+2. Click a colour to make a prediction. The game will randomly pick a winning colour.
+3. Use the History panel to see past rounds. No server required — static file.
+4. To publish online: push to a GitHub repo and enable GitHub Pages (or upload to any static host).
+
+Note: This is a simple demo/learning project. Do not use for real-money gambling.
+--><!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>91 Club — Colour Prediction</title>
+  <style>
+    :root{
+      --bg:#0f172a; --card:#0b1220; --muted:#9aa4b2; --accent:#06b6d4;
+      --glass:rgba(255,255,255,0.03);
+    }
+    *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    body{margin:0;background:linear-gradient(180deg,#071025 0%,#071521 100%);color:#e6eef6;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .wrap{width:100%;max-width:920px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+@media(max-width:880px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 20px rgba(2,6,23,0.6)}
+.controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.bank{background:var(--glass);padding:8px;border-radius:8px;color:var(--muted);font-size:13px}
+
+.colors{display:flex;flex-wrap:wrap;gap:10px}
+.color-btn{width:86px;height:86px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#061422;cursor:pointer;user-select:none;box-shadow:0 6px 18px rgba(2,6,23,0.6);transition:transform .14s ease}
+.color-btn:active{transform:translateY(3px)}
+.color-label{font-size:14px}
+
+/* predefined colours */
+.c-red{background:linear-gradient(180deg,#ff7b7b,#ff3b3b)}
+.c-blue{background:linear-gradient(180deg,#7fb7ff,#2b8cff)}
+.c-green{background:linear-gradient(180deg,#9ff7c7,#32e38a)}
+.c-yellow{background:linear-gradient(180deg,#ffe089,#ffcc00)}
+.c-purple{background:linear-gradient(180deg,#d6b3ff,#9b6cff)}
+.c-orange{background:linear-gradient(180deg,#ffd0a8,#ff8c42)}
+
+.status{display:flex;align-items:center;gap:12px;margin-top:12px}
+.pill{background:var(--glass);padding:8px 12px;border-radius:999px;color:var(--muted);font-size:13px}
+
+.right{display:flex;flex-direction:column;gap:12px}
+.result{height:140px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:18px}
+.history{max-height:240px;overflow:auto;padding:8px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent)}
+.row{display:flex;justify-content:space-between;padding:8px;border-bottom:1px dashed rgba(255,255,255,0.03);align-items:center}
+.small{font-size:12px;color:var(--muted)}
+
+.footer{margin-top:14px;color:var(--muted);font-size:13px}
+.muted{color:var(--muted)}
+
+button.btn{background:var(--accent);border:none;padding:8px 12px;border-radius:10px;color:#052026;font-weight:700;cursor:pointer}
+button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+
+/* tiny animation for winning color */
+.glow{box-shadow:0 8px 30px rgba(6,182,212,0.14),0 2px 6px rgba(6,182,212,0.06);transform:scale(1.04)}
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>91 Club — Colour Prediction</h1>
+        <p class="lead">Click a colour to predict. This is a static demo — no server required.</p>
+      </div>
+      <div class="bank card">
+        Balance: <strong id="balance">500</strong> coins
+      </div>
+    </header><main class="grid">
+  <section class="card">
+    <div class="controls">
+      <label class="muted">Bet amount:</label>
+      <input id="bet" type="number" value="10" min="1" style="width:100px;padding:8px;border-radius:8px;border:none;background:rgba(255,255,255,0.02);color:inherit">
+      <button class="btn" id="autoPlay">Auto 10 Rounds</button>
+      <button class="secondary" id="reset">Reset</button>
+    </div>
+
+    <div class="colors" id="choices">
+      <!-- buttons injected by JS -->
+    </div>
+
+    <div class="status">
+      <div class="pill">Rounds: <span id="rounds">0</span></div>
+      <div class="pill">Wins: <span id="wins">0</span></div>
+      <div class="pill">Losses: <span id="losses">0</span></div>
+    </div>
+
+    <div class="footer">Tip: Save this file and open it in your browser. To publish, upload to GitHub and enable Pages.</div>
+  </section>
+
+  <aside class="right">
+    <div class="card result" id="resultArea">Make your prediction — pick a colour.</div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>History</strong>
+        <button class="secondary" id="clearHistory">Clear</button>
+      </div>
+      <div class="history" id="history"></div>
+    </div>
+  </aside>
+</main>
+
+  </div>  <script>
+    (function(){
+      const colours = [
+        {id:'red', label:'Red', cls:'c-red'},
+        {id:'blue', label:'Blue', cls:'c-blue'},
+        {id:'green', label:'Green', cls:'c-green'},
+        {id:'yellow', label:'Yellow', cls:'c-yellow'},
+        {id:'purple', label:'Purple', cls:'c-purple'},
+        {id:'orange', label:'Orange', cls:'c-orange'}
+      ];
+
+      const state = {
+        balance: 500,
+        rounds: 0,
+        wins: 0,
+        losses: 0,
+        history: []
+      };
+
+      const choices = document.getElementById('choices');
+      const balanceEl = document.getElementById('balance');
+      const roundsEl = document.getElementById('rounds');
+      const winsEl = document.getElementById('wins');
+      const lossesEl = document.getElementById('losses');
+      const resultArea = document.getElementById('resultArea');
+      const historyEl = document.getElementById('history');
+      const betInput = document.getElementById('bet');
+
+      function renderChoices(){
+        choices.innerHTML = '';
+        colours.forEach(c=>{
+          const btn = document.createElement('div');
+          btn.className = 'color-btn '+c.cls;
+          btn.innerHTML = `<div class="color-label">${c.label}</div>`;
+          btn.onclick = ()=>playRound(c.id);
+          choices.appendChild(btn);
+        });
+      }
+
+      function randomPick(){
+        // equal probability among colours
+        return colours[Math.floor(Math.random()*colours.length)].id;
+      }
+
+      function playRound(pick){
+        const bet = Math.max(1, Math.floor(Number(betInput.value) || 1));
+        if(state.balance < bet){
+          flashResult('Insufficient balance', true);
+          return;
+        }
+        state.balance -= bet;
+
+        const winner = randomPick();
+        const win = (winner === pick);
+
+        state.rounds += 1;
+        if(win){
+          const payoutMultiplier = Math.floor(colours.length/1.2); // simple multiplier
+          const payout = bet * payoutMultiplier;
+          state.balance += payout;
+          state.wins += 1;
+          flashResult(`You picked ${capitalize(pick)} — WIN! Payout: ${payout} coins`, false, winner);
+          addHistory(pick, winner, bet, payout);
+        } else {
+          state.losses += 1;
+          flashResult(`You picked ${capitalize(pick)} — lose. Winning: ${capitalize(winner)}`, true, winner);
+          addHistory(pick, winner, bet, 0);
+        }
+        persist();
+        renderStats();
+      }
+
+      function flashResult(text, isLose, winner){
+        resultArea.textContent = text;
+        resultArea.style.border = '1px solid rgba(255,255,255,0.04)';
+        if(winner){
+          // find winner color div and add glow
+          Array.from(choices.children).forEach(ch=>ch.classList.remove('glow'));
+          const index = colours.findIndex(c=>c.id===winner);
+          if(index>=0) choices.children[index].classList.add('glow');
+        }
+        setTimeout(()=>{
+          Array.from(choices.children).forEach(ch=>ch.classList.remove('glow'));
+        },1200);
+      }
+
+      function addHistory(pick, winner, bet, payout){
+        const rec = {time:new Date().toLocaleString(), pick, winner, bet, payout};
+        state.history.unshift(rec);
+        if(state.history.length>50) state.history.pop();
+        renderHistory();
+      }
+
+      function renderHistory(){
+        historyEl.innerHTML = '';
+        if(state.history.length===0){ historyEl.innerHTML = '<div class="small muted">No rounds yet</div>'; return}
+        state.history.forEach(r=>{
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.innerHTML = `
+            <div>
+              <div style="font-weight:700">${capitalize(r.winner)}</div>
+              <div class="small">You: ${capitalize(r.pick)} • Bet ${r.bet} • Payout ${r.payout}</div>
+            </div>
+            <div class="small">${r.time}</div>
+          `;
+          historyEl.appendChild(row);
+        });
+      }
+
+      function renderStats(){
+        balanceEl.textContent = state.balance;
+        roundsEl.textContent = state.rounds;
+        winsEl.textContent = state.wins;
+        lossesEl.textContent = state.losses;
+      }
+
+      function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+
+      function persist(){
+        try{ localStorage.setItem('91club_state', JSON.stringify(state)); }catch(e){}
+      }
+      function load(){
+        try{
+          const raw = localStorage.getItem('91club_state');
+          if(raw){
+            const parsed = JSON.parse(raw);
+            Object.assign(state, parsed);
+          }
+        }catch(e){}
+      }
+
+      document.getElementById('clearHistory').onclick = ()=>{ state.history=[]; renderHistory(); persist(); };
+      document.getElementById('reset').onclick = ()=>{
+        if(confirm('Reset balance and stats?')){
+          state.balance=500; state.rounds=0; state.wins=0; state.losses=0; state.history=[]; renderStats(); renderHistory(); persist(); resultArea.textContent='Reset complete.'
+        }
+      };
+
+      document.getElementById('autoPlay').onclick = ()=>{
+        const n=10; let i=0; const interval = setInterval(()=>{
+          const pick = colours[Math.floor(Math.random()*colours.length)].id;
+          playRound(pick);
+          i++; if(i>=n) clearInterval(interval);
+        },160);
+      };
+
+      // load saved state and render
+      load(); renderChoices(); renderStats(); renderHistory();
+
+    })();
+  </script></body>
+</html>
